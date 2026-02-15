@@ -8,20 +8,11 @@ const { stopWatching } = require('./file-watcher');
 let mainWindow;
 let themeHandler = null;
 
-// Global security: prevent navigation and new windows for all webContents
-app.on('web-contents-created', (_event, contents) => {
-  contents.on('will-navigate', (event) => {
-    event.preventDefault();
-  });
-  contents.setWindowOpenHandler(() => ({ action: 'deny' }));
-});
-
 function createWindow() {
   const windowState = loadWindowState();
   const isDev = !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
 
   mainWindow = new BrowserWindow({
-    show: false,
     width: windowState.width || 1200,
     height: windowState.height || 800,
     x: windowState.x,
@@ -42,7 +33,7 @@ function createWindow() {
     },
   });
 
-  // Set CSP via session headers (relaxed in dev for Vite HMR)
+  // Set CSP via session headers (only in production)
   if (!isDev) {
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       callback({
@@ -56,10 +47,15 @@ function createWindow() {
     });
   }
 
-  // Show window when ready
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
+  // Block navigation away from the app (but allow initial load)
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const devServer = MAIN_WINDOW_VITE_DEV_SERVER_URL || '';
+    if (url.startsWith('file://') || (isDev && url.startsWith(devServer))) {
+      return; // Allow internal navigation
+    }
+    event.preventDefault();
   });
+  mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
   // Save window state and clean up on close
   mainWindow.on('close', () => {
@@ -76,6 +72,11 @@ function createWindow() {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
     mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+  }
+
+  // Open DevTools in development
+  if (isDev) {
+    mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 
   // Unregister previous handlers before re-registering (handles macOS reactivation)
