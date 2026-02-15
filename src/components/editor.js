@@ -164,7 +164,10 @@ function show() {
   if (!container) return;
 
   const { currentFile, rawMarkdown } = getState();
-  if (!currentFile || !rawMarkdown) return;
+  if (!currentFile || rawMarkdown == null) return;
+
+  // Destroy any previous editor instance
+  destroyEditor();
 
   createToolbar();
 
@@ -184,37 +187,41 @@ function show() {
   lastSavedContent = rawMarkdown;
   const html = markdownToHtml(rawMarkdown);
 
-  editor = new Editor({
-    element: editorContent,
-    extensions: [
-      StarterKit.configure({
-        heading: { levels: [1, 2, 3, 4, 5, 6] },
-      }),
-      Placeholder.configure({
-        placeholder: 'Start writing, or type / for commands...',
-      }),
-      TaskList,
-      TaskItem.configure({ nested: true }),
-      SlashCommands,
-    ],
-    content: html,
-    editorProps: {
-      attributes: {
-        class: 'markdown-body',
+  try {
+    editor = new Editor({
+      element: editorContent,
+      extensions: [
+        StarterKit.configure({
+          heading: { levels: [1, 2, 3, 4, 5, 6] },
+        }),
+        Placeholder.configure({
+          placeholder: 'Start writing, or type / for commands...',
+        }),
+        TaskList,
+        TaskItem.configure({ nested: true }),
+        SlashCommands,
+      ],
+      content: html,
+      editorProps: {
+        attributes: {
+          class: 'markdown-body',
+        },
       },
-    },
-    onUpdate: () => {
-      updateToolbarState();
-      updateDirtyState();
-    },
-    onSelectionUpdate: () => {
-      updateToolbarState();
-    },
-  });
+      onUpdate: () => {
+        updateToolbarState();
+        updateDirtyState();
+      },
+      onSelectionUpdate: () => {
+        updateToolbarState();
+      },
+    });
 
-  // Keyboard shortcuts
-  container.addEventListener('keydown', handleKeydown);
-  editor.commands.focus();
+    // Keyboard shortcuts
+    container.addEventListener('keydown', handleKeydown);
+    editor.commands.focus();
+  } catch (err) {
+    console.error('Failed to initialize editor:', err);
+  }
 }
 
 function hide() {

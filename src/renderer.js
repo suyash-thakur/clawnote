@@ -57,14 +57,8 @@ async function main() {
     setState({ sidebarVisible: !sidebarVisible });
   });
 
-  // Cmd+E toggle edit mode
+  // Cmd+S save (Cmd+E is handled by the native menu accelerator)
   function handleGlobalKeydown(e) {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
-      e.preventDefault();
-      const { currentFile, editing } = getState();
-      if (!currentFile) return;
-      setState({ editing: !editing });
-    }
     if ((e.metaKey || e.ctrlKey) && e.key === 's') {
       const { editing } = getState();
       if (editing) {
