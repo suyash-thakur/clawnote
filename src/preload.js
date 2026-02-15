@@ -4,8 +4,6 @@ contextBridge.exposeInMainWorld('api', {
   openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
   readDirectory: (dirPath, depth) => ipcRenderer.invoke('fs:readDirectory', dirPath, depth),
   readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),
-  writeFile: (filePath, content) => ipcRenderer.invoke('fs:writeFile', filePath, content),
-  watchDirectory: (dirPath) => ipcRenderer.invoke('fs:watchDirectory', dirPath),
   getOpenedDirectory: () => ipcRenderer.invoke('app:getOpenedDirectory'),
 
   onFileChanged: (callback) => {

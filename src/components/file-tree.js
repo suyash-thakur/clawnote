@@ -2,20 +2,30 @@ import { getState, setState, subscribe } from '../state.js';
 
 let container = null;
 let unsubscribe = null;
+let renderTimer = null;
 
 export function init(el) {
   container = el;
   render();
   unsubscribe = subscribe((changed) => {
     if (changed.includes('fileTree') || changed.includes('currentFile') || changed.includes('currentDir')) {
-      render();
+      scheduleRender();
     }
   });
 }
 
 export function destroy() {
   if (unsubscribe) unsubscribe();
+  if (renderTimer) cancelAnimationFrame(renderTimer);
   container = null;
+}
+
+function scheduleRender() {
+  if (renderTimer) return;
+  renderTimer = requestAnimationFrame(() => {
+    renderTimer = null;
+    render();
+  });
 }
 
 function render() {
@@ -107,12 +117,19 @@ function renderTree(nodes, activeFile) {
     .join('');
 }
 
+let currentDirToken = null;
+
 export async function loadDirectory(dirPath) {
+  const token = {};
+  currentDirToken = token;
+
   setState({ currentDir: dirPath, fileTree: null, currentFile: null });
   try {
     const tree = await window.api.readDirectory(dirPath, 10);
+    if (currentDirToken !== token) return;
     setState({ fileTree: tree });
   } catch (err) {
+    if (currentDirToken !== token) return;
     console.error('Failed to read directory:', err);
   }
 }
@@ -129,7 +146,6 @@ export function loadFile(filePath) {
     .readFile(filePath)
     .then((content) => {
       if (currentLoadToken !== token) return;
-      // Dispatch event for markdown renderer
       window.dispatchEvent(new CustomEvent('file:loaded', { detail: { path: filePath, content } }));
     })
     .catch((err) => {

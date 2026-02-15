@@ -6,15 +6,18 @@ import './styles/hljs-theme.css';
 import 'github-markdown-css/github-markdown.css';
 
 import { getState, setState, subscribe } from './state.js';
-import { init as initFileTree, loadDirectory, loadFile } from './components/file-tree.js';
-import { init as initMarkdownRenderer } from './components/markdown-renderer.js';
+import { init as initFileTree, destroy as destroyFileTree, loadDirectory, loadFile } from './components/file-tree.js';
+import { init as initMarkdownRenderer, destroy as destroyMarkdownRenderer } from './components/markdown-renderer.js';
 
-// Initialize the app
+let cleanup = null;
+
 async function main() {
+  // Clean up previous initialization if any (handles reload)
+  if (cleanup) cleanup();
+
   const sidebar = document.getElementById('sidebar');
   const content = document.getElementById('content');
 
-  // Initialize components
   initFileTree(sidebar);
   initMarkdownRenderer(content);
 
@@ -23,59 +26,70 @@ async function main() {
   setState({ effectiveTheme: systemTheme });
   document.documentElement.setAttribute('data-theme', systemTheme);
 
-  // Listen for theme changes
   const removeThemeListener = window.api.onThemeChanged((theme) => {
     setState({ effectiveTheme: theme });
     document.documentElement.setAttribute('data-theme', theme);
   });
 
-  // Listen for sidebar toggle
-  subscribe((changed) => {
+  const unsubscribeSidebar = subscribe((changed) => {
     if (changed.includes('sidebarVisible')) {
       const { sidebarVisible } = getState();
       document.body.classList.toggle('sidebar-hidden', !sidebarVisible);
     }
   });
 
-  // Menu: open directory
   const removeMenuOpenDir = window.api.onMenuOpenDirectory(async () => {
     const dir = await window.api.openDirectory();
     if (dir) await loadDirectory(dir);
   });
 
-  // Menu: toggle sidebar
   const removeMenuToggleSidebar = window.api.onMenuToggleSidebar(() => {
     const { sidebarVisible } = getState();
     setState({ sidebarVisible: !sidebarVisible });
   });
 
-  // File change watcher
+  // Debounce directory reloads from file watcher
+  let reloadDirTimer = null;
   const removeFileWatcher = window.api.onFileChanged(({ event, path }) => {
     const { currentFile, currentDir } = getState();
 
-    // If the tree structure changed, reload directory
     if (event === 'add' || event === 'unlink' || event === 'addDir' || event === 'unlinkDir') {
-      if (currentDir) loadDirectory(currentDir);
+      if (currentDir) {
+        clearTimeout(reloadDirTimer);
+        reloadDirTimer = setTimeout(() => loadDirectory(currentDir), 300);
+      }
       return;
     }
 
-    // If current file changed, reload it
     if (event === 'change' && currentFile === path) {
       loadFile(path);
     }
   });
 
-  // Handle drag and drop of directories
-  document.addEventListener('dragover', (e) => {
+  // Prevent drag-and-drop
+  const handleDragover = (e) => {
     e.preventDefault();
     e.stopPropagation();
-  });
+  };
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  document.addEventListener('dragover', handleDragover);
+  document.addEventListener('drop', handleDrop);
 
-  document.addEventListener('drop', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  });
+  cleanup = () => {
+    removeThemeListener();
+    unsubscribeSidebar();
+    removeMenuOpenDir();
+    removeMenuToggleSidebar();
+    removeFileWatcher();
+    clearTimeout(reloadDirTimer);
+    document.removeEventListener('dragover', handleDragover);
+    document.removeEventListener('drop', handleDrop);
+    destroyFileTree();
+    destroyMarkdownRenderer();
+  };
 }
 
-// Start
 main().catch(console.error);

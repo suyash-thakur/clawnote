@@ -3,6 +3,7 @@ import DOMPurify from 'dompurify';
 
 let container = null;
 let hljs = null;
+let highlightAbortController = null;
 
 const md = markdownit({
   html: false,
@@ -38,7 +39,6 @@ export function init(el) {
   // Lazy-load highlight.js
   import('highlight.js/lib/core').then(async (mod) => {
     hljs = mod.default;
-    // Load common languages
     const langs = await Promise.all([
       import('highlight.js/lib/languages/javascript'),
       import('highlight.js/lib/languages/typescript'),
@@ -69,7 +69,6 @@ export function init(el) {
     ];
     langs.forEach((lang, i) => hljs.registerLanguage(names[i], lang.default));
 
-    // Highlight any already-rendered blocks
     if (container) highlightDeferred(container);
   });
 }
@@ -77,6 +76,7 @@ export function init(el) {
 export function destroy() {
   window.removeEventListener('file:loaded', handleFileLoaded);
   window.removeEventListener('file:error', handleFileError);
+  if (highlightAbortController) highlightAbortController.abort();
   container = null;
 }
 
@@ -95,17 +95,32 @@ function handleFileError(e) {
   `;
 }
 
-function renderMarkdown(content, filePath) {
+function renderMarkdown(content) {
   if (!container) return;
 
-  // Get scroll anchor before re-render
+  // Cancel any in-flight highlighting
+  if (highlightAbortController) highlightAbortController.abort();
+
   const anchor = getScrollAnchor(container);
 
   const rawHtml = md.render(content);
   const cleanHtml = DOMPurify.sanitize(rawHtml, {
     USE_PROFILES: { html: true },
     ADD_ATTR: ['target', 'rel', 'data-lang'],
-    FORBID_TAGS: ['style', 'form', 'input', 'textarea', 'select', 'button'],
+    FORBID_TAGS: [
+      'style',
+      'form',
+      'input',
+      'textarea',
+      'select',
+      'button',
+      'iframe',
+      'object',
+      'embed',
+      'script',
+      'math',
+    ],
+    FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'onfocus'],
   });
 
   container.innerHTML = `
@@ -114,7 +129,6 @@ function renderMarkdown(content, filePath) {
     </article>
   `;
 
-  // Add checkbox interactivity for task lists
   container.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
     cb.disabled = true;
   });
@@ -131,26 +145,37 @@ function renderMarkdown(content, filePath) {
 }
 
 function highlightDeferred(el) {
+  if (highlightAbortController) highlightAbortController.abort();
+  const controller = new AbortController();
+  highlightAbortController = controller;
+
   const pending = el.querySelectorAll('pre.hljs-pending');
   let index = 0;
 
   function batch(deadline) {
+    if (controller.signal.aborted) return;
+
     while (index < pending.length && (!deadline || deadline.timeRemaining() > 2)) {
+      if (controller.signal.aborted) return;
       const block = pending[index];
       const lang = block.dataset.lang;
       const code = block.querySelector('code');
       if (lang && hljs.getLanguage(lang)) {
         code.innerHTML = hljs.highlight(code.textContent, { language: lang }).value;
       } else if (code.textContent.trim()) {
-        const result = hljs.highlightAuto(code.textContent);
-        if (result.relevance > 5) {
-          code.innerHTML = result.value;
+        // Cap auto-detection input size
+        const text = code.textContent;
+        if (text.length <= 10000) {
+          const result = hljs.highlightAuto(text);
+          if (result.relevance > 5) {
+            code.innerHTML = result.value;
+          }
         }
       }
       block.classList.replace('hljs-pending', 'hljs-done');
       index++;
     }
-    if (index < pending.length) {
+    if (index < pending.length && !controller.signal.aborted) {
       requestIdleCallback(batch, { timeout: 100 });
     }
   }
@@ -158,7 +183,6 @@ function highlightDeferred(el) {
   if ('requestIdleCallback' in window) {
     requestIdleCallback(batch, { timeout: 100 });
   } else {
-    // Fallback: highlight all at once
     batch(null);
   }
 }

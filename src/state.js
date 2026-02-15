@@ -15,11 +15,17 @@ export function subscribe(fn) {
 }
 
 export function getState() {
-  return state;
+  return { ...state };
 }
 
 export function setState(partial) {
   const changed = Object.keys(partial);
   Object.assign(state, partial);
-  listeners.forEach((fn) => fn(changed));
+  listeners.forEach((fn) => {
+    try {
+      fn(changed);
+    } catch (err) {
+      console.error('State subscriber error:', err);
+    }
+  });
 }

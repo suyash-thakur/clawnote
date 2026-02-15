@@ -1,6 +1,6 @@
 const { Menu, app } = require('electron');
 
-function buildMenu(mainWindow) {
+function buildMenu(mainWindow, isDev) {
   const isMac = process.platform === 'darwin';
 
   const template = [
@@ -27,7 +27,9 @@ function buildMenu(mainWindow) {
           label: 'Open Directory...',
           accelerator: 'CmdOrCtrl+O',
           click: () => {
-            mainWindow.webContents.send('menu:openDirectory');
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('menu:openDirectory');
+            }
           },
         },
         { type: 'separator' },
@@ -53,7 +55,9 @@ function buildMenu(mainWindow) {
           label: 'Toggle Sidebar',
           accelerator: 'CmdOrCtrl+B',
           click: () => {
-            mainWindow.webContents.send('menu:toggleSidebar');
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('menu:toggleSidebar');
+            }
           },
         },
         { type: 'separator' },
@@ -62,8 +66,7 @@ function buildMenu(mainWindow) {
         { role: 'zoomIn' },
         { role: 'zoomOut' },
         { role: 'resetZoom' },
-        { type: 'separator' },
-        { role: 'toggleDevTools' },
+        ...(isDev ? [{ type: 'separator' }, { role: 'toggleDevTools' }] : []),
       ],
     },
     {

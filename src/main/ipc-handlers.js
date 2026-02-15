@@ -4,6 +4,7 @@ const path = require('node:path');
 const { watchDirectory, stopWatching } = require('./file-watcher');
 
 let openedDirectoryReal = null;
+const isDev = typeof MAIN_WINDOW_VITE_DEV_SERVER_URL !== 'undefined' && !!MAIN_WINDOW_VITE_DEV_SERVER_URL;
 
 async function validatePath(filePath) {
   if (!openedDirectoryReal) throw new Error('No directory opened');
@@ -25,8 +26,10 @@ async function validatePath(filePath) {
 
 function validateSender(event) {
   const url = event.senderFrame?.url || '';
-  // Allow dev server and file:// URLs
-  if (url.startsWith('http://localhost:') || url.startsWith('file://')) {
+  if (isDev && url.startsWith('http://localhost:')) {
+    return true;
+  }
+  if (url.startsWith('file://')) {
     return true;
   }
   throw new Error('Unauthorized IPC sender');
@@ -38,7 +41,6 @@ async function readDirectoryRecursive(dirPath, depth = 10, currentDepth = 0) {
   const entries = await fs.readdir(dirPath, { withFileTypes: true });
   const result = [];
 
-  // Sort: directories first, then files, alphabetically within each group
   const sorted = entries
     .filter((e) => !e.name.startsWith('.') && e.name !== 'node_modules')
     .sort((a, b) => {
@@ -49,6 +51,26 @@ async function readDirectoryRecursive(dirPath, depth = 10, currentDepth = 0) {
 
   for (const entry of sorted) {
     const fullPath = path.join(dirPath, entry.name);
+
+    // Skip symbolic links to prevent directory traversal
+    if (entry.isSymbolicLink()) continue;
+
+    // Verify resolved path is within the allowed root
+    let realFullPath;
+    try {
+      realFullPath = await fs.realpath(fullPath);
+    } catch {
+      continue;
+    }
+    if (openedDirectoryReal) {
+      const rootWithSep = openedDirectoryReal.endsWith(path.sep)
+        ? openedDirectoryReal
+        : openedDirectoryReal + path.sep;
+      if (!realFullPath.startsWith(rootWithSep) && realFullPath !== openedDirectoryReal) {
+        continue;
+      }
+    }
+
     if (entry.isDirectory()) {
       const children = await readDirectoryRecursive(fullPath, depth, currentDepth + 1);
       result.push({ name: entry.name, path: fullPath, type: 'directory', children });
@@ -59,6 +81,16 @@ async function readDirectoryRecursive(dirPath, depth = 10, currentDepth = 0) {
 
   return result;
 }
+
+const IPC_CHANNELS = [
+  'dialog:openDirectory',
+  'fs:readDirectory',
+  'fs:readFile',
+  'fs:watchDirectory',
+  'system:getTheme',
+  'app:getVersion',
+  'app:getOpenedDirectory',
+];
 
 function registerIpcHandlers(mainWindow) {
   ipcMain.handle('dialog:openDirectory', async (event) => {
@@ -71,7 +103,6 @@ function registerIpcHandlers(mainWindow) {
     const dirPath = result.filePaths[0];
     openedDirectoryReal = await fs.realpath(dirPath);
 
-    // Start watching
     watchDirectory(openedDirectoryReal, mainWindow);
 
     return openedDirectoryReal;
@@ -80,25 +111,22 @@ function registerIpcHandlers(mainWindow) {
   ipcMain.handle('fs:readDirectory', async (event, dirPath, depth) => {
     validateSender(event);
     const validated = await validatePath(dirPath);
-    return readDirectoryRecursive(validated, depth || 10);
+    const safeDepth = Math.min(Math.max(parseInt(depth, 10) || 10, 1), 20);
+    return readDirectoryRecursive(validated, safeDepth);
   });
 
   ipcMain.handle('fs:readFile', async (event, filePath) => {
     validateSender(event);
     const validated = await validatePath(filePath);
+    // Only allow reading markdown files
+    if (!validated.endsWith('.md') && !validated.endsWith('.markdown')) {
+      throw new Error('Can only read markdown files');
+    }
     const stat = await fs.stat(validated);
-    // Limit file size to 10MB
     if (stat.size > 10 * 1024 * 1024) {
       throw new Error('File too large (>10MB)');
     }
     return fs.readFile(validated, 'utf-8');
-  });
-
-  ipcMain.handle('fs:writeFile', async (event, filePath, content) => {
-    validateSender(event);
-    const validated = await validatePath(filePath);
-    await fs.writeFile(validated, content, 'utf-8');
-    return true;
   });
 
   ipcMain.handle('fs:watchDirectory', async (event, dirPath) => {
@@ -126,4 +154,10 @@ function registerIpcHandlers(mainWindow) {
   });
 }
 
-module.exports = { registerIpcHandlers };
+function unregisterIpcHandlers() {
+  for (const channel of IPC_CHANNELS) {
+    ipcMain.removeHandler(channel);
+  }
+}
+
+module.exports = { registerIpcHandlers, unregisterIpcHandlers };
