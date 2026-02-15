@@ -1,7 +1,36 @@
 import { Menu, app } from 'electron';
+import { getRecentDirs } from './recent-dirs.js';
 
 export function buildMenu(mainWindow, isDev) {
   const isMac = process.platform === 'darwin';
+
+  const recentDirs = getRecentDirs();
+  const recentSubmenu = recentDirs.length > 0
+    ? [
+        ...recentDirs.map((dir) => {
+          const name = dir.split('/').pop() || dir;
+          return {
+            label: name,
+            toolTip: dir,
+            click: () => {
+              if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send('menu:openRecentDirectory', dir);
+              }
+            },
+          };
+        }),
+        { type: 'separator' },
+        {
+          label: 'Clear Recent',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) {
+              mainWindow.webContents.send('menu:clearRecent');
+            }
+          },
+        },
+      ]
+    : [{ label: 'No Recent Directories', enabled: false }];
+
   const template = [
     ...(isMac
       ? [{
@@ -22,6 +51,10 @@ export function buildMenu(mainWindow, isDev) {
           click: () => {
             if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('menu:openDirectory');
           },
+        },
+        {
+          label: 'Open Recent',
+          submenu: recentSubmenu,
         },
         { type: 'separator' },
         isMac ? { role: 'close' } : { role: 'quit' },

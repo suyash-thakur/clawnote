@@ -2,9 +2,12 @@ import { ipcMain, dialog, nativeTheme, app } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { watchDirectory } from './file-watcher.js';
+import { getRecentDirs, addRecentDir, clearRecentDirs } from './recent-dirs.js';
+import { buildMenu } from './menu.js';
 
 let openedDirectoryReal = null;
 let _isDev = false;
+let _mainWindow = null;
 
 async function validatePath(filePath) {
   if (!openedDirectoryReal) throw new Error('No directory opened');
@@ -60,23 +63,51 @@ async function readDirectoryRecursive(dirPath, depth = 10, currentDepth = 0) {
 
 const IPC_CHANNELS = [
   'dialog:openDirectory',
+  'dialog:openRecentDirectory',
   'fs:readDirectory',
   'fs:readFile',
   'fs:writeFile',
   'fs:watchDirectory',
+  'recent:getAll',
+  'recent:clear',
   'system:getTheme',
   'app:getVersion',
   'app:getOpenedDirectory',
 ];
 
+function rebuildMenu() {
+  if (_mainWindow) buildMenu(_mainWindow, _isDev);
+}
+
 export function registerIpcHandlers(mainWindow, isDev) {
   _isDev = isDev;
+  _mainWindow = mainWindow;
 
   ipcMain.handle('dialog:openDirectory', async (event) => {
     validateSender(event);
     const result = await dialog.showOpenDialog(mainWindow, { properties: ['openDirectory'] });
     if (result.canceled || result.filePaths.length === 0) return null;
     openedDirectoryReal = await fs.realpath(result.filePaths[0]);
+    addRecentDir(openedDirectoryReal);
+    rebuildMenu();
+    watchDirectory(openedDirectoryReal, mainWindow);
+    return openedDirectoryReal;
+  });
+
+  ipcMain.handle('dialog:openRecentDirectory', async (event, dirPath) => {
+    validateSender(event);
+    if (typeof dirPath !== 'string') throw new Error('Invalid path');
+    let realPath;
+    try {
+      realPath = await fs.realpath(dirPath);
+    } catch {
+      throw new Error('Directory no longer exists');
+    }
+    const stat = await fs.stat(realPath);
+    if (!stat.isDirectory()) throw new Error('Path is not a directory');
+    openedDirectoryReal = realPath;
+    addRecentDir(openedDirectoryReal);
+    rebuildMenu();
     watchDirectory(openedDirectoryReal, mainWindow);
     return openedDirectoryReal;
   });
@@ -115,6 +146,18 @@ export function registerIpcHandlers(mainWindow, isDev) {
     validateSender(event);
     const validated = await validatePath(dirPath);
     watchDirectory(validated, mainWindow);
+    return true;
+  });
+
+  ipcMain.handle('recent:getAll', async (event) => {
+    validateSender(event);
+    return getRecentDirs();
+  });
+
+  ipcMain.handle('recent:clear', async (event) => {
+    validateSender(event);
+    clearRecentDirs();
+    rebuildMenu();
     return true;
   });
 

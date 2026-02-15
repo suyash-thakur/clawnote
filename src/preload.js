@@ -2,6 +2,9 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
   openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
+  openRecentDirectory: (dirPath) => ipcRenderer.invoke('dialog:openRecentDirectory', dirPath),
+  getRecentDirs: () => ipcRenderer.invoke('recent:getAll'),
+  clearRecentDirs: () => ipcRenderer.invoke('recent:clear'),
   readDirectory: (dirPath, depth) => ipcRenderer.invoke('fs:readDirectory', dirPath, depth),
   readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),
   writeFile: (filePath, content) => ipcRenderer.invoke('fs:writeFile', filePath, content),
@@ -29,6 +32,18 @@ contextBridge.exposeInMainWorld('api', {
     const handler = () => callback();
     ipcRenderer.on('menu:toggleEdit', handler);
     return () => ipcRenderer.removeListener('menu:toggleEdit', handler);
+  },
+
+  onMenuOpenRecentDirectory: (callback) => {
+    const handler = (_event, dirPath) => callback(dirPath);
+    ipcRenderer.on('menu:openRecentDirectory', handler);
+    return () => ipcRenderer.removeListener('menu:openRecentDirectory', handler);
+  },
+
+  onMenuClearRecent: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('menu:clearRecent', handler);
+    return () => ipcRenderer.removeListener('menu:clearRecent', handler);
   },
 
   getSystemTheme: () => ipcRenderer.invoke('system:getTheme'),

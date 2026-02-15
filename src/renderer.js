@@ -82,6 +82,21 @@ async function main() {
     setState({ editing: !editing });
   }) || (() => {});
 
+  // Menu: open recent directory
+  const removeMenuOpenRecent = window.api.onMenuOpenRecentDirectory?.(async (dirPath) => {
+    try {
+      const resolved = await window.api.openRecentDirectory(dirPath);
+      if (resolved) await loadDirectory(resolved);
+    } catch (err) {
+      console.error('Failed to open recent directory:', err);
+    }
+  }) || (() => {});
+
+  // Menu: clear recent
+  const removeMenuClearRecent = window.api.onMenuClearRecent?.(async () => {
+    await window.api.clearRecentDirs();
+  }) || (() => {});
+
   // Debounce directory reloads from file watcher
   let reloadDirTimer = null;
   const removeFileWatcher = window.api.onFileChanged(({ event, path }) => {
@@ -114,6 +129,8 @@ async function main() {
     removeMenuOpenDir();
     removeMenuToggleSidebar();
     removeMenuToggleEdit();
+    removeMenuOpenRecent();
+    removeMenuClearRecent();
     removeFileWatcher();
     clearTimeout(reloadDirTimer);
     document.removeEventListener('keydown', handleGlobalKeydown);

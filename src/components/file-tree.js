@@ -3,9 +3,15 @@ import { getState, setState, subscribe } from '../state.js';
 let container = null;
 let unsubscribe = null;
 let renderTimer = null;
+let recentDirs = [];
 
 export function init(el) {
   container = el;
+  // Load recent dirs then render
+  window.api.getRecentDirs().then((dirs) => {
+    recentDirs = dirs;
+    render();
+  });
   render();
   unsubscribe = subscribe((changed) => {
     if (changed.includes('fileTree') || changed.includes('currentFile') || changed.includes('currentDir')) {
@@ -34,25 +40,7 @@ function render() {
   const { fileTree, currentDir, currentFile } = getState();
 
   if (!fileTree || !currentDir) {
-    container.innerHTML = `
-      <div class="file-tree-empty">
-        <div class="empty-icon">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-          </svg>
-        </div>
-        <p>Open a directory to get started</p>
-        <button class="open-dir-btn" id="openDirBtn">Open Directory</button>
-        <div class="shortcut-hint">&#8984;O</div>
-      </div>
-    `;
-    const btn = container.querySelector('#openDirBtn');
-    if (btn) {
-      btn.addEventListener('click', async () => {
-        const dir = await window.api.openDirectory();
-        if (dir) await loadDirectory(dir);
-      });
-    }
+    renderEmptyState();
     return;
   }
 
@@ -66,7 +54,6 @@ function render() {
     </div>
   `;
 
-  // Attach click handlers
   container.querySelectorAll('[data-path]').forEach((el) => {
     el.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -76,6 +63,63 @@ function render() {
         loadFile(filePath);
       } else if (type === 'directory') {
         el.classList.toggle('collapsed');
+      }
+    });
+  });
+}
+
+function renderEmptyState() {
+  const hasRecent = recentDirs.length > 0;
+
+  container.innerHTML = `
+    <div class="file-tree-empty">
+      <div class="empty-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+      </div>
+      <p>Open a directory to get started</p>
+      <button class="open-dir-btn" id="openDirBtn">Open Directory</button>
+      <div class="shortcut-hint">\u2318O</div>
+      ${hasRecent ? `
+        <div class="recent-dirs">
+          <div class="recent-dirs-header">Recent</div>
+          <div class="recent-dirs-list">
+            ${recentDirs.map((dir) => {
+              const name = dir.split('/').pop() || dir;
+              const parent = dir.split('/').slice(0, -1).pop() || '';
+              return `
+                <button class="recent-dir-item" data-recent="${escapeHtml(dir)}" title="${escapeHtml(dir)}">
+                  <svg class="recent-dir-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span class="recent-dir-name">${escapeHtml(name)}</span>
+                  ${parent ? `<span class="recent-dir-parent">${escapeHtml(parent)}</span>` : ''}
+                </button>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+
+  container.querySelector('#openDirBtn')?.addEventListener('click', async () => {
+    const dir = await window.api.openDirectory();
+    if (dir) await loadDirectory(dir);
+  });
+
+  container.querySelectorAll('[data-recent]').forEach((el) => {
+    el.addEventListener('click', async () => {
+      const dir = el.dataset.recent;
+      try {
+        const resolved = await window.api.openRecentDirectory(dir);
+        if (resolved) await loadDirectory(resolved);
+      } catch (err) {
+        console.error('Failed to open recent directory:', err);
+        // Remove stale entry and re-render
+        recentDirs = recentDirs.filter((d) => d !== dir);
+        render();
       }
     });
   });
@@ -122,6 +166,9 @@ let currentDirToken = null;
 export async function loadDirectory(dirPath) {
   const token = {};
   currentDirToken = token;
+
+  // Refresh recent dirs list
+  window.api.getRecentDirs().then((dirs) => { recentDirs = dirs; });
 
   setState({ currentDir: dirPath, fileTree: null, currentFile: null, editing: false, rawMarkdown: null });
   try {

@@ -92,6 +92,71 @@ body {
   color: var(--text-muted);
 }
 
+/* Recent directories */
+.recent-dirs {
+  width: 100%;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.recent-dirs-header {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-muted);
+  padding: 0 8px;
+  margin-bottom: 6px;
+}
+
+.recent-dirs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.recent-dir-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s ease;
+}
+
+.recent-dir-item:hover {
+  background: var(--hover-bg);
+}
+
+.recent-dir-icon {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.recent-dir-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.recent-dir-parent {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* File tree header */
 .file-tree-header {
   padding: 12px 16px;
