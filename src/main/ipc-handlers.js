@@ -1,6 +1,8 @@
 import { ipcMain, dialog, nativeTheme, app } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import os from 'node:os';
+import { execSync } from 'node:child_process';
 import pty from 'node-pty';
 import { watchDirectory } from './file-watcher.js';
 import { getRecentDirs, addRecentDir, clearRecentDirs } from './recent-dirs.js';
@@ -10,6 +12,73 @@ let openedDirectoryReal = null;
 let _isDev = false;
 let _mainWindow = null;
 let activePty = null;
+
+import fsSync from 'node:fs';
+
+// Packaged apps launched from Finder get a minimal PATH (/usr/bin:/bin).
+// Resolve the absolute path to `claude` and the user's real shell PATH.
+let _claudePath = null;
+let _shellPath = null;
+
+function resolveShellEnv() {
+  if (_shellPath) return;
+  const shell = process.env.SHELL || '/bin/zsh';
+  try {
+    // Login shell (-l) sources .zprofile/.bash_profile where PATH is set.
+    // Use a marker to extract just the PATH, avoiding shell startup noise.
+    const marker = `__CLAWNOTE_${Date.now()}__`;
+    const out = execSync(
+      `${shell} -lc 'echo ${marker}; which claude; echo $PATH; echo ${marker}'`,
+      { encoding: 'utf-8', timeout: 10000, stdio: ['pipe', 'pipe', 'pipe'] },
+    );
+    const lines = out.split(marker).filter(Boolean);
+    if (lines.length > 0) {
+      const inner = lines[0].trim().split('\n').filter(Boolean);
+      if (inner.length >= 2) {
+        _claudePath = inner[0]; // which claude
+        _shellPath = inner[1];  // $PATH
+      } else if (inner.length === 1) {
+        _shellPath = inner[0];
+      }
+    }
+  } catch {
+    // Ignore — fall through to manual resolution
+  }
+
+  // If `which` didn't find claude, check common locations
+  if (!_claudePath || !fsSync.existsSync(_claudePath)) {
+    const home = os.homedir();
+    const candidates = [
+      path.join(home, '.local', 'bin', 'claude'),
+      path.join(home, '.npm-global', 'bin', 'claude'),
+      '/opt/homebrew/bin/claude',
+      '/usr/local/bin/claude',
+    ];
+    _claudePath = candidates.find((p) => {
+      try { fsSync.accessSync(p, fsSync.constants.X_OK); return true; } catch { return false; }
+    }) || 'claude';
+  }
+
+  if (!_shellPath) {
+    const home = os.homedir();
+    _shellPath = [
+      path.join(home, '.local', 'bin'),
+      '/opt/homebrew/bin',
+      '/usr/local/bin',
+      process.env.PATH || '/usr/bin:/bin',
+    ].join(':');
+  }
+}
+
+function getClaudePath() {
+  resolveShellEnv();
+  return _claudePath;
+}
+
+function getShellPath() {
+  resolveShellEnv();
+  return _shellPath;
+}
 
 async function validatePath(filePath) {
   if (!openedDirectoryReal) throw new Error('No directory opened');
@@ -211,11 +280,13 @@ export function registerIpcHandlers(mainWindow, isDev) {
     const args = ['--append-system-prompt', systemPrompt];
     if (fileName) args.push(`Let's work on ${fileName}`);
 
-    // Clean env — remove CLAUDECODE to avoid nested session error
+    // Clean env — remove CLAUDECODE to avoid nested session error,
+    // and use the user's full shell PATH so `claude` is found.
     const env = { ...process.env };
     delete env.CLAUDECODE;
+    env.PATH = getShellPath();
 
-    activePty = pty.spawn('claude', args, {
+    activePty = pty.spawn(getClaudePath(), args, {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,
