@@ -3,7 +3,7 @@
   "productName": "Markdown Reader",
   "version": "0.1.0",
   "description": "A minimal, lightweight markdown reader. Think lightweight Obsidian.",
-  "main": ".vite/build/main.js",
+  "main": ".vite/build/index.js",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
