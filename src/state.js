@@ -2,9 +2,11 @@ const state = {
   currentDir: null,
   currentFile: null,
   fileTree: null,
+  rawMarkdown: null,
   theme: 'system',
   effectiveTheme: 'light',
   sidebarVisible: true,
+  editing: false,
 };
 
 const listeners = new Set();

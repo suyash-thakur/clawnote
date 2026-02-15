@@ -123,7 +123,7 @@ export async function loadDirectory(dirPath) {
   const token = {};
   currentDirToken = token;
 
-  setState({ currentDir: dirPath, fileTree: null, currentFile: null });
+  setState({ currentDir: dirPath, fileTree: null, currentFile: null, editing: false, rawMarkdown: null });
   try {
     const tree = await window.api.readDirectory(dirPath, 10);
     if (currentDirToken !== token) return;
@@ -140,12 +140,13 @@ export function loadFile(filePath) {
   const token = {};
   currentLoadToken = token;
 
-  setState({ currentFile: filePath });
+  setState({ currentFile: filePath, editing: false });
 
   window.api
     .readFile(filePath)
     .then((content) => {
       if (currentLoadToken !== token) return;
+      setState({ rawMarkdown: content });
       window.dispatchEvent(new CustomEvent('file:loaded', { detail: { path: filePath, content } }));
     })
     .catch((err) => {

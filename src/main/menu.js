@@ -30,6 +30,14 @@ export function buildMenu(mainWindow, isDev) {
     {
       label: 'Edit',
       submenu: [
+        {
+          label: 'Toggle Edit Mode',
+          accelerator: 'CmdOrCtrl+E',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('menu:toggleEdit');
+          },
+        },
+        { type: 'separator' },
         { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
         { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' },
       ],

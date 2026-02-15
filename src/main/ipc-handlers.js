@@ -62,6 +62,7 @@ const IPC_CHANNELS = [
   'dialog:openDirectory',
   'fs:readDirectory',
   'fs:readFile',
+  'fs:writeFile',
   'fs:watchDirectory',
   'system:getTheme',
   'app:getVersion',
@@ -96,6 +97,18 @@ export function registerIpcHandlers(mainWindow, isDev) {
     const stat = await fs.stat(validated);
     if (stat.size > 10 * 1024 * 1024) throw new Error('File too large (>10MB)');
     return fs.readFile(validated, 'utf-8');
+  });
+
+  ipcMain.handle('fs:writeFile', async (event, filePath, content) => {
+    validateSender(event);
+    const validated = await validatePath(filePath);
+    if (!validated.endsWith('.md') && !validated.endsWith('.markdown')) {
+      throw new Error('Can only write markdown files');
+    }
+    if (typeof content !== 'string') throw new Error('Content must be a string');
+    if (content.length > 10 * 1024 * 1024) throw new Error('Content too large (>10MB)');
+    await fs.writeFile(validated, content, 'utf-8');
+    return true;
   });
 
   ipcMain.handle('fs:watchDirectory', async (event, dirPath) => {

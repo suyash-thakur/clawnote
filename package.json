@@ -10,10 +10,19 @@
     "make": "electron-forge make"
   },
   "dependencies": {
+    "@joplin/turndown-plugin-gfm": "^1.0.64",
+    "@tiptap/core": "^3.19.0",
+    "@tiptap/extension-placeholder": "^3.19.0",
+    "@tiptap/extension-task-item": "^3.19.0",
+    "@tiptap/extension-task-list": "^3.19.0",
+    "@tiptap/pm": "^3.19.0",
+    "@tiptap/starter-kit": "^3.19.0",
+    "@tiptap/suggestion": "^3.19.0",
     "chokidar": "4.0.3",
     "dompurify": "3.2.4",
     "highlight.js": "11.11.1",
-    "markdown-it": "14.1.0"
+    "markdown-it": "14.1.0",
+    "turndown": "^7.2.2"
   },
   "devDependencies": {
     "@electron-forge/cli": "^7.6.0",

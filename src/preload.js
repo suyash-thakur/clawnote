@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('api', {
   openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
   readDirectory: (dirPath, depth) => ipcRenderer.invoke('fs:readDirectory', dirPath, depth),
   readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),
+  writeFile: (filePath, content) => ipcRenderer.invoke('fs:writeFile', filePath, content),
   getOpenedDirectory: () => ipcRenderer.invoke('app:getOpenedDirectory'),
 
   onFileChanged: (callback) => {
@@ -22,6 +23,12 @@ contextBridge.exposeInMainWorld('api', {
     const handler = () => callback();
     ipcRenderer.on('menu:toggleSidebar', handler);
     return () => ipcRenderer.removeListener('menu:toggleSidebar', handler);
+  },
+
+  onMenuToggleEdit: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('menu:toggleEdit', handler);
+    return () => ipcRenderer.removeListener('menu:toggleEdit', handler);
   },
 
   getSystemTheme: () => ipcRenderer.invoke('system:getTheme'),

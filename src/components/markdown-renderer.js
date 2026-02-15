@@ -1,9 +1,11 @@
 import markdownit from 'markdown-it';
 import DOMPurify from 'dompurify';
+import { getState, subscribe } from '../state.js';
 
 let container = null;
 let hljs = null;
 let highlightAbortController = null;
+let unsubscribeEditing = null;
 
 const md = markdownit({
   html: false,
@@ -35,6 +37,16 @@ export function init(el) {
 
   window.addEventListener('file:loaded', handleFileLoaded);
   window.addEventListener('file:error', handleFileError);
+
+  // When leaving edit mode, re-render the current file
+  unsubscribeEditing = subscribe((changed) => {
+    if (changed.includes('editing')) {
+      const { editing, rawMarkdown } = getState();
+      if (!editing && rawMarkdown) {
+        renderMarkdown(rawMarkdown);
+      }
+    }
+  });
 
   // Lazy-load highlight.js
   import('highlight.js/lib/core').then(async (mod) => {
@@ -76,13 +88,16 @@ export function init(el) {
 export function destroy() {
   window.removeEventListener('file:loaded', handleFileLoaded);
   window.removeEventListener('file:error', handleFileError);
+  if (unsubscribeEditing) unsubscribeEditing();
   if (highlightAbortController) highlightAbortController.abort();
   container = null;
 }
 
 function handleFileLoaded(e) {
-  const { content, path } = e.detail;
-  renderMarkdown(content, path);
+  const { editing } = getState();
+  if (editing) return;
+  const { content } = e.detail;
+  renderMarkdown(content);
 }
 
 function handleFileError(e) {
