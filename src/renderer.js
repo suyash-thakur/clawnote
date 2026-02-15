@@ -4,11 +4,13 @@ import './styles/markdown.css';
 import './styles/editor.css';
 import './styles/animations.css';
 import './styles/hljs-theme.css';
+import './styles/claude-terminal.css';
 
 import { getState, setState, subscribe } from './state.js';
 import { init as initFileTree, destroy as destroyFileTree, loadDirectory, loadFile } from './components/file-tree.js';
 import { init as initMarkdownRenderer, destroy as destroyMarkdownRenderer } from './components/markdown-renderer.js';
 import { init as initEditor, destroy as destroyEditor, save as saveEditor } from './components/editor.js';
+import { init as initClaudeTerminal, destroy as destroyClaudeTerminal, startSession as startClaudeSession } from './components/claude-terminal.js';
 
 let cleanup = null;
 
@@ -18,9 +20,12 @@ async function main() {
   const sidebar = document.getElementById('sidebar');
   const content = document.getElementById('content');
 
+  const claudeTerminalEl = document.getElementById('claude-terminal');
+
   initFileTree(sidebar);
   initMarkdownRenderer(content);
   initEditor(content);
+  initClaudeTerminal(claudeTerminalEl);
 
   // Set up theme
   const systemTheme = await window.api.getSystemTheme();
@@ -91,6 +96,31 @@ async function main() {
     await window.api.clearRecentDirs();
   }) || (() => {});
 
+  // Menu: open Claude Code terminal
+  const removeMenuOpenClaude = window.api.onMenuOpenClaude?.(async () => {
+    const { currentFile, currentDir, editing } = getState();
+    if (!currentDir) return;
+    if (editing) setState({ editing: false });
+    setState({ claudeTerminalVisible: true });
+    try {
+      await startClaudeSession(currentFile, currentDir);
+    } catch (err) {
+      console.error('Failed to open Claude Code:', err);
+    }
+  }) || (() => {});
+
+  // Claude open request from file-tree button
+  function handleClaudeOpenRequest() {
+    const { currentFile, currentDir, editing } = getState();
+    if (!currentDir) return;
+    if (editing) setState({ editing: false });
+    setState({ claudeTerminalVisible: true });
+    startClaudeSession(currentFile, currentDir).catch((err) => {
+      console.error('Failed to open Claude Code:', err);
+    });
+  }
+  window.addEventListener('claude:open-request', handleClaudeOpenRequest);
+
   // Debounce directory reloads from file watcher
   let reloadDirTimer = null;
   const removeFileWatcher = window.api.onFileChanged(({ event, path }) => {
@@ -124,7 +154,9 @@ async function main() {
     removeMenuToggleSidebar();
     removeMenuToggleEdit();
     removeMenuOpenRecent();
+    removeMenuOpenClaude();
     removeMenuClearRecent();
+    window.removeEventListener('claude:open-request', handleClaudeOpenRequest);
     removeFileWatcher();
     clearTimeout(reloadDirTimer);
     document.removeEventListener('keydown', handleGlobalKeydown);
@@ -133,6 +165,7 @@ async function main() {
     destroyFileTree();
     destroyMarkdownRenderer();
     destroyEditor();
+    destroyClaudeTerminal();
   };
 }
 

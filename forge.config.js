@@ -1,7 +1,7 @@
 module.exports = {
   packagerConfig: {
     asar: true,
-    name: 'Markdown Reader',
+    name: 'ClawNote',
   },
   makers: [
     { name: '@electron-forge/maker-zip' },

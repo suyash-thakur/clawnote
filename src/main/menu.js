@@ -71,6 +71,14 @@ export function buildMenu(mainWindow, isDev) {
           },
         },
         { type: 'separator' },
+        {
+          label: 'Open in Claude Code',
+          accelerator: 'CmdOrCtrl+Shift+C',
+          click: () => {
+            if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('menu:openClaude');
+          },
+        },
+        { type: 'separator' },
         { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
         { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' },
       ],

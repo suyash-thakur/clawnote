@@ -1,6 +1,7 @@
 import { ipcMain, dialog, nativeTheme, app } from 'electron';
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import pty from 'node-pty';
 import { watchDirectory } from './file-watcher.js';
 import { getRecentDirs, addRecentDir, clearRecentDirs } from './recent-dirs.js';
 import { buildMenu } from './menu.js';
@@ -8,6 +9,7 @@ import { buildMenu } from './menu.js';
 let openedDirectoryReal = null;
 let _isDev = false;
 let _mainWindow = null;
+let activePty = null;
 
 async function validatePath(filePath) {
   if (!openedDirectoryReal) throw new Error('No directory opened');
@@ -61,7 +63,7 @@ async function readDirectoryRecursive(dirPath, depth = 10, currentDepth = 0) {
   return result;
 }
 
-const IPC_CHANNELS = [
+const IPC_HANDLE_CHANNELS = [
   'dialog:openDirectory',
   'dialog:openRecentDirectory',
   'fs:readDirectory',
@@ -73,6 +75,13 @@ const IPC_CHANNELS = [
   'system:getTheme',
   'app:getVersion',
   'app:getOpenedDirectory',
+  'claude:openSession',
+  'claude:pty-kill',
+];
+
+const IPC_ON_CHANNELS = [
+  'claude:pty-input',
+  'claude:pty-resize',
 ];
 
 function rebuildMenu() {
@@ -175,10 +184,90 @@ export function registerIpcHandlers(mainWindow, isDev) {
     validateSender(event);
     return openedDirectoryReal;
   });
+
+  ipcMain.handle('claude:openSession', async (event, filePath, dirPath) => {
+    validateSender(event);
+    if (typeof dirPath !== 'string') throw new Error('dirPath must be a string');
+
+    // Kill existing session
+    if (activePty) {
+      try { activePty.kill(); } catch {}
+      activePty = null;
+    }
+
+    const realDir = await validatePath(dirPath);
+
+    let fileName = null;
+    if (filePath && typeof filePath === 'string') {
+      const realFile = await validatePath(filePath);
+      fileName = path.basename(realFile);
+    }
+
+    const systemPrompt = fileName
+      ? `The user is reading ${fileName} in ClawNote. Changes you make to files are auto-reloaded in the app.`
+      : 'The user is browsing files in ClawNote. Changes you make to files are auto-reloaded in the app.';
+
+    // Build args
+    const args = ['--append-system-prompt', systemPrompt];
+    if (fileName) args.push(`Let's work on ${fileName}`);
+
+    // Clean env — remove CLAUDECODE to avoid nested session error
+    const env = { ...process.env };
+    delete env.CLAUDECODE;
+
+    activePty = pty.spawn('claude', args, {
+      name: 'xterm-256color',
+      cols: 80,
+      rows: 24,
+      cwd: realDir,
+      env,
+    });
+
+    activePty.onData((data) => {
+      if (_mainWindow && !_mainWindow.isDestroyed()) {
+        _mainWindow.webContents.send('claude:pty-data', data);
+      }
+    });
+
+    activePty.onExit(({ exitCode }) => {
+      activePty = null;
+      if (_mainWindow && !_mainWindow.isDestroyed()) {
+        _mainWindow.webContents.send('claude:pty-exit', exitCode);
+      }
+    });
+
+    return true;
+  });
+
+  ipcMain.on('claude:pty-input', (event, data) => {
+    validateSender(event);
+    if (activePty) activePty.write(data);
+  });
+
+  ipcMain.on('claude:pty-resize', (event, cols, rows) => {
+    validateSender(event);
+    if (activePty) activePty.resize(cols, rows);
+  });
+
+  ipcMain.handle('claude:pty-kill', (event) => {
+    validateSender(event);
+    if (activePty) {
+      try { activePty.kill(); } catch {}
+      activePty = null;
+    }
+    return true;
+  });
 }
 
 export function unregisterIpcHandlers() {
-  for (const channel of IPC_CHANNELS) {
+  for (const channel of IPC_HANDLE_CHANNELS) {
     ipcMain.removeHandler(channel);
+  }
+  for (const channel of IPC_ON_CHANNELS) {
+    ipcMain.removeAllListeners(channel);
+  }
+  if (activePty) {
+    try { activePty.kill(); } catch {}
+    activePty = null;
   }
 }

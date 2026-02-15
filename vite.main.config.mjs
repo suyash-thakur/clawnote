@@ -7,6 +7,7 @@ export default defineConfig({
       external: [
         'electron',
         'chokidar',
+        'node-pty',
         ...builtinModules,
         ...builtinModules.map((m) => `node:${m}`),
       ],

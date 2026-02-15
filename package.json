@@ -1,8 +1,8 @@
 {
-  "name": "markdown-reader",
-  "productName": "Markdown Reader",
+  "name": "clawnote",
+  "productName": "ClawNote",
   "version": "0.1.0",
-  "description": "A minimal, lightweight markdown reader. Think lightweight Obsidian.",
+  "description": "A warm, minimal desktop markdown reader with a built-in Claude Code terminal.",
   "main": ".vite/build/index.js",
   "scripts": {
     "start": "electron-forge start",
@@ -18,10 +18,13 @@
     "@tiptap/pm": "^3.19.0",
     "@tiptap/starter-kit": "^3.19.0",
     "@tiptap/suggestion": "^3.19.0",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
     "chokidar": "4.0.3",
     "dompurify": "3.2.4",
     "highlight.js": "11.11.1",
     "markdown-it": "14.1.0",
+    "node-pty": "^1.1.0",
     "turndown": "^7.2.2"
   },
   "devDependencies": {

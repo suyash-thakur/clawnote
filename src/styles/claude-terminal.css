@@ -1,0 +1,93 @@
+/* Claude Terminal Panel */
+#claude-terminal {
+  display: none;
+  flex-direction: column;
+  height: 300px;
+  min-height: 120px;
+  border-top: 1px solid var(--border-color);
+  background: var(--term-bg);
+}
+
+.claude-terminal-visible #claude-terminal {
+  display: flex;
+}
+
+.claude-terminal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  background: var(--term-black);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+}
+
+.claude-terminal-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--term-bright-black);
+}
+
+.claude-terminal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--term-bright-black);
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.claude-terminal-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--term-fg);
+}
+
+.claude-terminal-body {
+  flex: 1;
+  overflow: hidden;
+  padding: 4px;
+}
+
+/* Ensure xterm fills the container */
+.claude-terminal-body .xterm {
+  height: 100%;
+}
+
+.claude-terminal-body .xterm-viewport {
+  overflow-y: auto;
+}
+
+/* Session ended message overlay */
+.claude-terminal-ended {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--term-bright-black);
+}
+
+.claude-terminal-ended button {
+  background: var(--term-cursor);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.claude-terminal-ended button:hover {
+  opacity: 0.85;
+}

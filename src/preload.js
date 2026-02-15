@@ -54,4 +54,31 @@ contextBridge.exposeInMainWorld('api', {
   },
 
   getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
+
+  openClaudeSession: (filePath, dirPath) =>
+    ipcRenderer.invoke('claude:openSession', filePath, dirPath),
+
+  sendClaudeInput: (data) => ipcRenderer.send('claude:pty-input', data),
+
+  resizeClaude: (cols, rows) => ipcRenderer.send('claude:pty-resize', cols, rows),
+
+  killClaude: () => ipcRenderer.invoke('claude:pty-kill'),
+
+  onClaudeData: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('claude:pty-data', handler);
+    return () => ipcRenderer.removeListener('claude:pty-data', handler);
+  },
+
+  onClaudeExit: (callback) => {
+    const handler = (_event, exitCode) => callback(exitCode);
+    ipcRenderer.on('claude:pty-exit', handler);
+    return () => ipcRenderer.removeListener('claude:pty-exit', handler);
+  },
+
+  onMenuOpenClaude: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('menu:openClaude', handler);
+    return () => ipcRenderer.removeListener('menu:openClaude', handler);
+  },
 });

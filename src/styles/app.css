@@ -163,6 +163,9 @@ body {
   background: var(--bg-sidebar-header);
   border-bottom: 1px solid var(--border-color);
   -webkit-app-region: drag;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .dir-name {
@@ -174,7 +177,28 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: block;
+  flex: 1;
+}
+
+.claude-btn {
+  -webkit-app-region: no-drag;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+
+.claude-btn:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
 }
 
 /* File tree list */
@@ -253,6 +277,15 @@ body {
   text-align: center;
   font-size: 12px;
   color: var(--text-muted);
+}
+
+/* Content area wrapper */
+#content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
 }
 
 /* Content area */

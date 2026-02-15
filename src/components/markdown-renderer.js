@@ -228,8 +228,8 @@ function showWelcome() {
   if (!container) return;
   container.innerHTML = `
     <div class="welcome-state">
-      <h1>Markdown Reader</h1>
-      <p>A minimal, lightweight reading companion.</p>
+      <h1>ClawNote</h1>
+      <p>A warm, minimal markdown reader with Claude built in.</p>
       <p class="welcome-hint">Open a directory to start reading<br><kbd>&#8984;</kbd> + <kbd>O</kbd></p>
     </div>
   `;

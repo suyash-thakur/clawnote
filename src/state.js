@@ -7,6 +7,7 @@ const state = {
   effectiveTheme: 'light',
   sidebarVisible: true,
   editing: false,
+  claudeTerminalVisible: false,
 };
 
 const listeners = new Set();

@@ -23,6 +23,28 @@
   --shadow-medium: 0 4px 12px rgba(29, 27, 24, 0.08);
   --kbd-bg: #e8e4dd;
   --kbd-border: #d4cfc6;
+
+  /* Terminal — warm dark palette even in light mode */
+  --term-bg: #2a2520;
+  --term-fg: #e8e0d4;
+  --term-cursor: #c05d30;
+  --term-cursor-accent: #2a2520;
+  --term-selection: rgba(192, 93, 48, 0.3);
+  --term-black: #1e1a16;
+  --term-bright-black: #6b6156;
+  --term-white: #e8e0d4;
+  --term-red: #c05d30;
+  --term-bright-red: #e08060;
+  --term-green: #8c9440;
+  --term-bright-green: #a8b560;
+  --term-yellow: #d4a054;
+  --term-bright-yellow: #f0c080;
+  --term-blue: #6a8fa0;
+  --term-bright-blue: #8ab0c0;
+  --term-magenta: #b07aa0;
+  --term-bright-magenta: #c89ab8;
+  --term-cyan: #6a9a8a;
+  --term-bright-cyan: #8abaa8;
 }
 
 :root[data-theme='dark'] {
@@ -47,6 +69,28 @@
   --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.3);
   --kbd-bg: #2a2825;
   --kbd-border: #3d3933;
+
+  /* Terminal — slightly darker than app bg */
+  --term-bg: #141311;
+  --term-fg: #e8e4dc;
+  --term-cursor: #e0845a;
+  --term-cursor-accent: #141311;
+  --term-selection: rgba(224, 132, 90, 0.3);
+  --term-black: #0e0d0c;
+  --term-bright-black: #716b62;
+  --term-white: #e8e4dc;
+  --term-red: #e0845a;
+  --term-bright-red: #f0a080;
+  --term-green: #8c9440;
+  --term-bright-green: #a8b560;
+  --term-yellow: #d4a054;
+  --term-bright-yellow: #f0c080;
+  --term-blue: #6a8fa0;
+  --term-bright-blue: #8ab0c0;
+  --term-magenta: #b07aa0;
+  --term-bright-magenta: #c89ab8;
+  --term-cyan: #6a9a8a;
+  --term-bright-cyan: #8abaa8;
 }
 
 ::selection {
