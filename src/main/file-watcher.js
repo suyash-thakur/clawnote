@@ -1,14 +1,13 @@
 let currentWatcher = null;
 const pendingReloads = new Map();
 
-async function watchDirectory(dirPath, mainWindow) {
+export async function watchDirectory(dirPath, mainWindow) {
   if (currentWatcher) {
     await currentWatcher.close();
     currentWatcher = null;
   }
   pendingReloads.clear();
 
-  // Dynamic import for ESM-only chokidar v4
   const { watch } = await import('chokidar');
 
   currentWatcher = watch(dirPath, {
@@ -21,10 +20,8 @@ async function watchDirectory(dirPath, mainWindow) {
   });
 
   currentWatcher.on('all', (event, filePath) => {
-    // Only watch markdown files and directory changes
     const isMarkdown = filePath.endsWith('.md') || filePath.endsWith('.markdown');
     const isTreeEvent = event === 'addDir' || event === 'unlinkDir' || event === 'add' || event === 'unlink';
-
     if (!isMarkdown && !isTreeEvent) return;
 
     const key = `${event}:${filePath}`;
@@ -43,12 +40,10 @@ async function watchDirectory(dirPath, mainWindow) {
   });
 }
 
-async function stopWatching() {
+export async function stopWatching() {
   if (currentWatcher) {
     await currentWatcher.close();
     currentWatcher = null;
   }
   pendingReloads.clear();
 }
-
-module.exports = { watchDirectory, stopWatching };

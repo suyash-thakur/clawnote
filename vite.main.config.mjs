@@ -1,12 +1,15 @@
 import { defineConfig } from 'vite';
+import { builtinModules } from 'node:module';
 
 export default defineConfig({
-  resolve: {
-    conditions: ['node'],
-  },
   build: {
     rollupOptions: {
-      external: ['chokidar'],
+      external: [
+        'electron',
+        'chokidar',
+        ...builtinModules,
+        ...builtinModules.map((m) => `node:${m}`),
+      ],
     },
   },
 });

@@ -1,10 +1,10 @@
-const { app } = require('electron');
-const path = require('node:path');
-const fs = require('node:fs');
+import { app } from 'electron';
+import path from 'node:path';
+import fs from 'node:fs';
 
 const stateFile = path.join(app.getPath('userData'), 'window-state.json');
 
-function loadWindowState() {
+export function loadWindowState() {
   try {
     const data = fs.readFileSync(stateFile, 'utf-8');
     const parsed = JSON.parse(data);
@@ -13,30 +13,18 @@ function loadWindowState() {
       y: Number.isFinite(parsed.y) ? parsed.y : undefined,
       width: Number.isFinite(parsed.width) && parsed.width >= 600 ? parsed.width : undefined,
       height: Number.isFinite(parsed.height) && parsed.height >= 400 ? parsed.height : undefined,
-      isMaximized: parsed.isMaximized === true,
     };
   } catch {
     return {};
   }
 }
 
-function saveWindowState(win) {
+export function saveWindowState(win) {
   if (!win || win.isDestroyed()) return;
-
   const bounds = win.getBounds();
-  const state = {
-    x: bounds.x,
-    y: bounds.y,
-    width: bounds.width,
-    height: bounds.height,
-    isMaximized: win.isMaximized(),
-  };
-
   try {
-    fs.writeFileSync(stateFile, JSON.stringify(state), 'utf-8');
+    fs.writeFileSync(stateFile, JSON.stringify(bounds), 'utf-8');
   } catch {
-    // Ignore write errors
+    // Ignore
   }
 }
-
-module.exports = { loadWindowState, saveWindowState };

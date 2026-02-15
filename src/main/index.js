@@ -1,9 +1,9 @@
-const { app, BrowserWindow, nativeTheme, session } = require('electron');
-const path = require('node:path');
-const { registerIpcHandlers, unregisterIpcHandlers } = require('./ipc-handlers');
-const { buildMenu } = require('./menu');
-const { loadWindowState, saveWindowState } = require('./window-state');
-const { stopWatching } = require('./file-watcher');
+import { app, BrowserWindow, nativeTheme, session } from 'electron';
+import path from 'node:path';
+import { registerIpcHandlers, unregisterIpcHandlers } from './ipc-handlers.js';
+import { buildMenu } from './menu.js';
+import { loadWindowState, saveWindowState } from './window-state.js';
+import { stopWatching } from './file-watcher.js';
 
 let mainWindow;
 let themeHandler = null;
@@ -33,7 +33,6 @@ function createWindow() {
     },
   });
 
-  // Set CSP via session headers (only in production)
   if (!isDev) {
     session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
       callback({
@@ -47,49 +46,34 @@ function createWindow() {
     });
   }
 
-  // Block navigation away from the app (but allow initial load)
   mainWindow.webContents.on('will-navigate', (event, url) => {
     const devServer = MAIN_WINDOW_VITE_DEV_SERVER_URL || '';
-    if (url.startsWith('file://') || (isDev && url.startsWith(devServer))) {
-      return; // Allow internal navigation
-    }
+    if (url.startsWith('file://') || (isDev && url.startsWith(devServer))) return;
     event.preventDefault();
   });
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
-  // Save window state and clean up on close
   mainWindow.on('close', () => {
     saveWindowState(mainWindow);
     stopWatching();
   });
+  mainWindow.on('closed', () => { mainWindow = null; });
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
-
-  // Load the index.html of the app
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
     mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
 
-  // Open DevTools in development
   if (isDev) {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 
-  // Unregister previous handlers before re-registering (handles macOS reactivation)
   unregisterIpcHandlers();
-  registerIpcHandlers(mainWindow);
-
-  // Build application menu
+  registerIpcHandlers(mainWindow, isDev);
   buildMenu(mainWindow, isDev);
 
-  // Theme change detection (remove previous listener to prevent leaks)
-  if (themeHandler) {
-    nativeTheme.removeListener('updated', themeHandler);
-  }
+  if (themeHandler) nativeTheme.removeListener('updated', themeHandler);
   themeHandler = () => {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send('system:themeChanged', nativeTheme.shouldUseDarkColors ? 'dark' : 'light');
@@ -100,16 +84,11 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
-
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (process.platform !== 'darwin') app.quit();
 });
