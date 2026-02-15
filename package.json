@@ -12,7 +12,6 @@
   "dependencies": {
     "chokidar": "4.0.3",
     "dompurify": "3.2.4",
-    "github-markdown-css": "5.8.1",
     "highlight.js": "11.11.1",
     "markdown-it": "14.1.0"
   },

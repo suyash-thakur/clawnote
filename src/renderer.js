@@ -3,7 +3,7 @@ import './styles/app.css';
 import './styles/markdown.css';
 import './styles/animations.css';
 import './styles/hljs-theme.css';
-import 'github-markdown-css/github-markdown.css';
+
 
 import { getState, setState, subscribe } from './state.js';
 import { init as initFileTree, destroy as destroyFileTree, loadDirectory, loadFile } from './components/file-tree.js';
