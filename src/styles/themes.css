@@ -1,0 +1,54 @@
+/* Warm Monograph Design System */
+
+:root,
+:root[data-theme='light'] {
+  --bg-primary: #fcfaf7;
+  --bg-sidebar: #f2efe9;
+  --bg-sidebar-header: #ebe7df;
+  --text-primary: #1d1b18;
+  --text-secondary: #5c574f;
+  --text-muted: #9c9589;
+  --accent-color: #c05d30;
+  --accent-hover: #a84f28;
+  --border-color: #e0dbd3;
+  --code-block-bg: #f7f5f0;
+  --code-inline-bg: #f0ede6;
+  --hover-bg: #e8e4dd;
+  --active-bg: #ddd8ce;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #ccc7bd;
+  --scrollbar-thumb-hover: #b5b0a5;
+  --selection-bg: rgba(192, 93, 48, 0.15);
+  --shadow-subtle: 0 1px 3px rgba(29, 27, 24, 0.06);
+  --shadow-medium: 0 4px 12px rgba(29, 27, 24, 0.08);
+  --kbd-bg: #e8e4dd;
+  --kbd-border: #d4cfc6;
+}
+
+:root[data-theme='dark'] {
+  --bg-primary: #1c1b19;
+  --bg-sidebar: #171614;
+  --bg-sidebar-header: #1f1e1c;
+  --text-primary: #e8e4dc;
+  --text-secondary: #a8a196;
+  --text-muted: #716b62;
+  --accent-color: #e0845a;
+  --accent-hover: #c97248;
+  --border-color: #2e2b27;
+  --code-block-bg: #222120;
+  --code-inline-bg: #282624;
+  --hover-bg: #2a2825;
+  --active-bg: #33302b;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #3d3933;
+  --scrollbar-thumb-hover: #504b43;
+  --selection-bg: rgba(224, 132, 90, 0.2);
+  --shadow-subtle: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --kbd-bg: #2a2825;
+  --kbd-border: #3d3933;
+}
+
+::selection {
+  background: var(--selection-bg);
+}

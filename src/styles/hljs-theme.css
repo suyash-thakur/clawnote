@@ -1,0 +1,113 @@
+/* Syntax highlighting - Warm Monograph theme */
+
+/* Light theme */
+:root[data-theme='light'] .hljs-done code,
+:root:not([data-theme='dark']) .hljs-done code {
+  color: #383430;
+}
+
+:root[data-theme='light'] .hljs-keyword,
+:root:not([data-theme='dark']) .hljs-keyword {
+  color: #8b5cf6;
+}
+
+:root[data-theme='light'] .hljs-string,
+:root:not([data-theme='dark']) .hljs-string {
+  color: #16a34a;
+}
+
+:root[data-theme='light'] .hljs-number,
+:root:not([data-theme='dark']) .hljs-number {
+  color: #c05d30;
+}
+
+:root[data-theme='light'] .hljs-comment,
+:root:not([data-theme='dark']) .hljs-comment {
+  color: #9c9589;
+  font-style: italic;
+}
+
+:root[data-theme='light'] .hljs-function,
+:root:not([data-theme='dark']) .hljs-function {
+  color: #2563eb;
+}
+
+:root[data-theme='light'] .hljs-title,
+:root:not([data-theme='dark']) .hljs-title {
+  color: #2563eb;
+}
+
+:root[data-theme='light'] .hljs-built_in,
+:root:not([data-theme='dark']) .hljs-built_in {
+  color: #d97706;
+}
+
+:root[data-theme='light'] .hljs-type,
+:root:not([data-theme='dark']) .hljs-type {
+  color: #0891b2;
+}
+
+:root[data-theme='light'] .hljs-attr,
+:root:not([data-theme='dark']) .hljs-attr {
+  color: #c05d30;
+}
+
+:root[data-theme='light'] .hljs-literal,
+:root:not([data-theme='dark']) .hljs-literal {
+  color: #c05d30;
+}
+
+:root[data-theme='light'] .hljs-meta,
+:root:not([data-theme='dark']) .hljs-meta {
+  color: #9c9589;
+}
+
+/* Dark theme */
+:root[data-theme='dark'] .hljs-done code {
+  color: #d4cfc5;
+}
+
+:root[data-theme='dark'] .hljs-keyword {
+  color: #a78bfa;
+}
+
+:root[data-theme='dark'] .hljs-string {
+  color: #4ade80;
+}
+
+:root[data-theme='dark'] .hljs-number {
+  color: #e0845a;
+}
+
+:root[data-theme='dark'] .hljs-comment {
+  color: #716b62;
+  font-style: italic;
+}
+
+:root[data-theme='dark'] .hljs-function {
+  color: #60a5fa;
+}
+
+:root[data-theme='dark'] .hljs-title {
+  color: #60a5fa;
+}
+
+:root[data-theme='dark'] .hljs-built_in {
+  color: #fbbf24;
+}
+
+:root[data-theme='dark'] .hljs-type {
+  color: #22d3ee;
+}
+
+:root[data-theme='dark'] .hljs-attr {
+  color: #e0845a;
+}
+
+:root[data-theme='dark'] .hljs-literal {
+  color: #e0845a;
+}
+
+:root[data-theme='dark'] .hljs-meta {
+  color: #716b62;
+}

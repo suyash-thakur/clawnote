@@ -1,0 +1,287 @@
+/* Reset and base */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* App layout */
+#app {
+  display: flex;
+  height: 100vh;
+  /* macOS traffic lights space */
+  padding-top: 38px;
+}
+
+/* Sidebar */
+#sidebar {
+  width: 260px;
+  min-width: 200px;
+  max-width: 400px;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: width 0.2s ease, min-width 0.2s ease, opacity 0.2s ease;
+}
+
+.sidebar-hidden #sidebar {
+  width: 0;
+  min-width: 0;
+  opacity: 0;
+  border-right: none;
+  pointer-events: none;
+}
+
+/* File tree empty state */
+.file-tree-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.file-tree-empty .empty-icon {
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.file-tree-empty p {
+  font-size: 13px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.open-dir-btn {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.open-dir-btn:hover {
+  background: var(--accent-hover);
+}
+
+.shortcut-hint {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* File tree header */
+.file-tree-header {
+  padding: 12px 16px;
+  background: var(--bg-sidebar-header);
+  border-bottom: 1px solid var(--border-color);
+  -webkit-app-region: drag;
+}
+
+.dir-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+/* File tree list */
+.file-tree-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 4px 0;
+}
+
+.tree-item {
+  display: flex;
+  align-items: center;
+  padding: 4px 12px 4px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  border-radius: 4px;
+  margin: 1px 8px;
+  transition: background 0.1s ease;
+  user-select: none;
+}
+
+.tree-item:hover {
+  background: var(--hover-bg);
+}
+
+.tree-item.active {
+  background: var(--active-bg);
+  color: var(--accent-color);
+  font-weight: 500;
+}
+
+.tree-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-right: 6px;
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.tree-item.active .tree-icon {
+  color: var(--accent-color);
+}
+
+.tree-dir .dir-icon {
+  transition: transform 0.15s ease;
+}
+
+.tree-dir.collapsed .dir-icon {
+  transform: rotate(0deg);
+}
+
+.tree-dir:not(.collapsed) .dir-icon {
+  transform: rotate(90deg);
+}
+
+.tree-dir.collapsed + .tree-children {
+  display: none;
+}
+
+.tree-children {
+  padding-left: 12px;
+}
+
+.tree-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-empty {
+  padding: 16px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Content area */
+#content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 40px;
+  scroll-behavior: smooth;
+}
+
+/* Welcome state */
+.welcome-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.welcome-state h1 {
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.welcome-state p {
+  font-size: 15px;
+  margin-bottom: 4px;
+  line-height: 1.6;
+}
+
+.welcome-hint {
+  margin-top: 24px;
+  font-size: 13px;
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  border-radius: 4px;
+  box-shadow: 0 1px 0 var(--kbd-border);
+}
+
+/* Error state */
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.error-detail {
+  font-size: 12px;
+  color: var(--accent-color);
+  margin-top: 8px;
+  font-family: 'IBM Plex Mono', 'SF Mono', monospace;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Only show scrollbar on hover for sidebar */
+#sidebar .file-tree-list::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+
+#sidebar .file-tree-list:hover::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+}
